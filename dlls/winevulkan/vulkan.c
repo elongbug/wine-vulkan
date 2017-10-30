@@ -24,8 +24,10 @@
 #include "winuser.h"
 
 #include "wine/debug.h"
+#include "wine/heap.h"
 #include "wine/vulkan.h"
 #include "wine/vulkan_driver.h"
+#include "vulkan_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(vulkan);
 
@@ -68,11 +70,56 @@ static BOOL wine_vk_init(HINSTANCE hinst)
     return TRUE;
 }
 
+/* Helper function used for freeing an instance structure. This function supports full
+ * and partial object cleanups and can thus be used for vkCreateInstance failures.
+ */
+static void wine_vk_instance_free(struct VkInstance_T *instance)
+{
+    if (!instance)
+        return;
+
+    if (instance->instance)
+        vk_funcs->p_vkDestroyInstance(instance->instance, NULL /* pAllocator */);
+
+    heap_free(instance);
+}
+
 static VkResult WINAPI wine_vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
         VkInstance *pInstance)
 {
-    TRACE("%p %p %p\n", pCreateInfo, pAllocator, pInstance);
-    return vk_funcs->p_vkCreateInstance(pCreateInfo, pAllocator, pInstance);
+    struct VkInstance_T *instance = NULL;
+    VkResult res;
+
+    TRACE("pCreateInfo %p, pAllocator %p, pInstance %p\n", pCreateInfo, pAllocator, pInstance);
+
+    if (pAllocator)
+        FIXME("Support for allocation callbacks not implemented yet\n");
+
+    instance = heap_alloc(sizeof(*instance));
+    if (!instance)
+    {
+        ERR("Failed to allocate memory for instance\n");
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto err;
+    }
+    instance->base.loader_magic = VULKAN_ICD_MAGIC_VALUE;
+
+    res = vk_funcs->p_vkCreateInstance(pCreateInfo, NULL /* pAllocator */, &instance->instance);
+    if (res != VK_SUCCESS)
+    {
+        ERR("Failed to create instance, res=%d\n", res);
+        goto err;
+    }
+
+    *pInstance = instance;
+    TRACE("Done, instance=%p native_instance=%p\n", instance, instance->instance);
+    return VK_SUCCESS;
+
+err:
+    if (instance)
+        wine_vk_instance_free(instance);
+
+    return res;
 }
 
 static VkResult WINAPI wine_vkEnumerateInstanceExtensionProperties(const char *layer_name, uint32_t *count,
