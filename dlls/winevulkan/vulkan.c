@@ -60,6 +60,88 @@ static BOOL wine_vk_init(HINSTANCE hinst)
     return TRUE;
 }
 
+/* Helper function which stores wrapped physical devices in the instance object. */
+static VkResult wine_vk_instance_load_physical_devices(struct VkInstance_T *instance)
+{
+    VkResult res;
+    struct VkPhysicalDevice_T **tmp_phys_devs = NULL;
+    unsigned int i;
+    uint32_t num_phys_devs = 0;
+
+    res = instance->funcs.p_vkEnumeratePhysicalDevices(instance->instance, &num_phys_devs, NULL);
+    if (res != VK_SUCCESS)
+    {
+        ERR("Failed to enumerate physical devices, res=%d\n", res);
+        return res;
+    }
+
+    /* Don't bother with any of the rest if the system just lacks devices. */
+    if (num_phys_devs == 0)
+    {
+        instance->num_phys_devs = 0;
+        instance->phys_devs_initialized = TRUE;
+        return VK_SUCCESS;
+    }
+
+    tmp_phys_devs = heap_alloc(num_phys_devs * sizeof(*tmp_phys_devs));
+    if (!tmp_phys_devs)
+        return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+    res = instance->funcs.p_vkEnumeratePhysicalDevices(instance->instance, &num_phys_devs, tmp_phys_devs);
+    if (res != VK_SUCCESS)
+        goto err;
+
+    instance->phys_devs = heap_alloc(num_phys_devs * sizeof(*instance->phys_devs));
+    if (!instance->phys_devs)
+    {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto err;
+    }
+
+    /* Wrap each native physical device handle into a dispatchable object for the ICD loader. */
+    for (i = 0; i < num_phys_devs; i++)
+    {
+        VkPhysicalDevice phys_dev = heap_alloc(sizeof(*phys_dev));
+        if (!phys_dev)
+        {
+            ERR("Unable to allocate memory for physical device!\n");
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto err;
+        }
+
+        phys_dev->base.loader_magic = VULKAN_ICD_MAGIC_VALUE;
+        phys_dev->instance = instance;
+        phys_dev->phys_dev = tmp_phys_devs[i];
+
+        instance->phys_devs[i] = phys_dev;
+        instance->num_phys_devs = i;
+    }
+    instance->num_phys_devs = num_phys_devs;
+    instance->phys_devs_initialized = TRUE;
+
+    heap_free(tmp_phys_devs);
+    return VK_SUCCESS;
+
+err:
+    if (tmp_phys_devs)
+        heap_free(tmp_phys_devs);
+
+    if (instance->phys_devs)
+    {
+        for (i = 0; i < instance->num_phys_devs; i++)
+        {
+            heap_free(instance->phys_devs[i]);
+            instance->phys_devs[i] = NULL;
+        }
+        heap_free(instance->phys_devs);
+        instance->num_phys_devs = 0;
+        instance->phys_devs = NULL;
+        instance->phys_devs_initialized = FALSE;
+    }
+
+    return res;
+}
+
 /* Helper function used for freeing an instance structure. This function supports full
  * and partial object cleanups and can thus be used for vkCreateInstance failures.
  */
@@ -67,6 +149,17 @@ static void wine_vk_instance_free(struct VkInstance_T *instance)
 {
     if (!instance)
         return;
+
+    if (instance->phys_devs)
+    {
+        unsigned int i;
+
+        for (i = 0; i < instance->num_phys_devs; i++)
+        {
+            heap_free(&instance->phys_devs[i]);
+        }
+        heap_free(instance->phys_devs);
+    }
 
     if (instance->instance)
         vk_funcs->p_vkDestroyInstance(instance->instance, NULL /* pAllocator */);
@@ -110,6 +203,8 @@ static VkResult WINAPI wine_vkCreateInstance(const VkInstanceCreateInfo *pCreate
     ALL_VK_INSTANCE_FUNCS()
 #undef USE_VK_FUNC
 
+    instance->phys_devs_initialized = FALSE;
+
     *pInstance = instance;
     TRACE("Done, instance=%p native_instance=%p\n", instance, instance->instance);
     return VK_SUCCESS;
@@ -136,6 +231,60 @@ static VkResult WINAPI wine_vkEnumerateInstanceExtensionProperties(const char *l
 {
     TRACE("%p %p %p\n", layer_name, count, properties);
     return vk_funcs->p_vkEnumerateInstanceExtensionProperties(layer_name, count, properties);
+}
+
+VkResult WINAPI wine_vkEnumeratePhysicalDevices(VkInstance instance, uint32_t *device_count, VkPhysicalDevice *devices)
+{
+    VkResult res;
+    unsigned int i;
+    int num_copies = 0;
+
+    TRACE("%p %p %p\n", instance, device_count, devices);
+
+    /* Cache physical devices for vkEnumeratePhysicalDevices within the instance as each
+     * vkPhysicalDevice is a dispatchable object, which means we need to wrap the native
+     * physical device and present those the application. Applications call this function
+     * multiple times first to get the number of devices, then to get the devices.
+     * Cleanup happens as part of wine_vkDestroyInstance.
+     */
+    if (instance->phys_devs_initialized == FALSE)
+    {
+        res = wine_vk_instance_load_physical_devices(instance);
+        if (res != VK_SUCCESS)
+        {
+            ERR("Failed to cache physical devices, res=%d\n", res);
+            return res;
+        }
+    }
+
+    if (!devices)
+    {
+        *device_count = instance->num_phys_devs;
+        return VK_SUCCESS;
+    }
+
+    if (*device_count < instance->num_phys_devs)
+    {
+        /* Incomplete is a type of success used to signal the application
+         * that not all devices got copied.
+         */
+        num_copies = *device_count;
+        res = VK_INCOMPLETE;
+    }
+    else
+    {
+        num_copies = instance->num_phys_devs;
+        res = VK_SUCCESS;
+    }
+
+    for (i = 0; i < num_copies; i++)
+    {
+        devices[i] = instance->phys_devs[i];
+    }
+    *device_count = num_copies;
+
+    TRACE("Returning %d devices\n", *device_count);
+    return res;
 }
 
 static PFN_vkVoidFunction WINAPI wine_vkGetInstanceProcAddr(VkInstance instance, const char *name)
