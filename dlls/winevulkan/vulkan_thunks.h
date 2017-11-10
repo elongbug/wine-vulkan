@@ -19,6 +19,7 @@ VkResult WINAPI wine_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDev
 void WINAPI wine_vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) DECLSPEC_HIDDEN;
 VkResult WINAPI wine_vkEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName, uint32_t *pPropertyCount, VkExtensionProperties *pProperties) DECLSPEC_HIDDEN;
 VkResult WINAPI wine_vkEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount, VkPhysicalDevice *pPhysicalDevices) DECLSPEC_HIDDEN;
+PFN_vkVoidFunction WINAPI wine_vkGetDeviceProcAddr(VkDevice device, const char *pName) DECLSPEC_HIDDEN;
 
 typedef struct VkImageFormatProperties_host
 {
@@ -265,7 +266,6 @@ struct vulkan_device_funcs
     void (*p_vkFreeMemory)(VkDevice, VkDeviceMemory, const VkAllocationCallbacks *);
     void (*p_vkGetBufferMemoryRequirements)(VkDevice, VkBuffer, VkMemoryRequirements *);
     void (*p_vkGetDeviceMemoryCommitment)(VkDevice, VkDeviceMemory, VkDeviceSize *);
-    PFN_vkVoidFunction (*p_vkGetDeviceProcAddr)(VkDevice, const char *);
     void (*p_vkGetDeviceQueue)(VkDevice, uint32_t, uint32_t, VkQueue *);
     VkResult (*p_vkGetEventStatus)(VkDevice, VkEvent);
     VkResult (*p_vkGetFenceStatus)(VkDevice, VkFence);
@@ -417,7 +417,6 @@ struct vulkan_instance_funcs
     USE_VK_FUNC(vkFreeMemory) \
     USE_VK_FUNC(vkGetBufferMemoryRequirements) \
     USE_VK_FUNC(vkGetDeviceMemoryCommitment) \
-    USE_VK_FUNC(vkGetDeviceProcAddr) \
     USE_VK_FUNC(vkGetDeviceQueue) \
     USE_VK_FUNC(vkGetEventStatus) \
     USE_VK_FUNC(vkGetFenceStatus) \
