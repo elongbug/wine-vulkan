@@ -51,6 +51,21 @@ static void wine_vk_device_free(struct VkDevice_T *device)
     if (!device)
         return;
 
+    if (device->queues)
+    {
+        int i;
+        for (i = 0; i < device->max_queue_families; i++)
+        {
+            if (device->queues[i])
+                heap_free(device->queues[i]);
+        }
+        heap_free(device->queues);
+        device->queues = NULL;
+    }
+
+    if (device->queue_count)
+        heap_free(device->queue_count);
+
     if (device->device && device->funcs.p_vkDestroyDevice)
     {
         device->funcs.p_vkDestroyDevice(device->device, NULL /* pAllocator */);
@@ -75,6 +90,35 @@ static BOOL wine_vk_init(HINSTANCE hinst)
 
     ReleaseDC(0, hdc);
     return TRUE;
+}
+
+/* Helper function to create queues for a given family index. */
+static struct VkQueue_T *wine_vk_device_alloc_queues(struct VkDevice_T *device, uint32_t fam_index, uint32_t queue_count)
+{
+    int i;
+
+    struct VkQueue_T *queues = heap_alloc(sizeof(struct VkQueue_T)*queue_count);
+    if (!queues)
+    {
+        ERR("Failed to allocate memory for queues\n");
+        return NULL;
+    }
+
+    for (i = 0; i < queue_count; i++)
+    {
+        struct VkQueue_T *queue = &queues[i];
+        queue->device = device;
+
+        /* The native device was already allocated with the required number of queues, 
+         * so just fetch them from there.
+         */
+        device->funcs.p_vkGetDeviceQueue(device->device, fam_index, i, &queue->queue);
+
+        /* Set special header for ICD loader. */
+        ((struct wine_vk_base*)queue)->loader_magic = VULKAN_ICD_MAGIC_VALUE;
+    }
+
+    return queues;
 }
 
 static struct VkPhysicalDevice_T *wine_vk_instance_alloc_physical_device(struct VkInstance_T *instance, VkPhysicalDevice phys_dev_host)
@@ -284,7 +328,9 @@ VkResult WINAPI wine_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDev
         const VkAllocationCallbacks *pAllocator, VkDevice *pDevice)
 {
     struct VkDevice_T *device = NULL;
+    uint32_t max_queue_families;
     VkResult res;
+    int i;
 
     TRACE("%p %p %p %p\n", physicalDevice, pCreateInfo, pAllocator, pDevice);
 
@@ -322,6 +368,46 @@ VkResult WINAPI wine_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDev
         TRACE("Not found %s\n", #name);
     ALL_VK_DEVICE_FUNCS()
 #undef USE_VK_FUNC
+
+    /* We need to cache all queues within the device as each requires wrapping since queues are
+     * dispatchable objects.
+     */
+    physicalDevice->instance->funcs.p_vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice->phys_dev,
+            &max_queue_families, NULL);
+    device->max_queue_families = max_queue_families;
+    TRACE("Max queue families: %d\n", device->max_queue_families);
+
+    device->queues = heap_alloc(sizeof(*device->queues)*max_queue_families);
+    if (!device->queues)
+    {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto err;
+    }
+
+    device->queue_count = heap_alloc(sizeof(*device->queue_count)*max_queue_families);
+    if (!device->queue_count)
+    {
+        res = VK_ERROR_OUT_OF_HOST_MEMORY;
+        goto err;
+    }
+
+    for (i = 0; i < pCreateInfo->queueCreateInfoCount; i++)
+    {
+        uint32_t fam_index = pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex;
+        uint32_t queue_count = pCreateInfo->pQueueCreateInfos[i].queueCount;
+
+        TRACE("queueFamilyIndex %d, queueCount %d\n", fam_index, queue_count);
+
+        device->queues[fam_index] = wine_vk_device_alloc_queues(device, fam_index, queue_count);
+        if (!device->queues[fam_index])
+        {
+            res = VK_ERROR_OUT_OF_HOST_MEMORY;
+            ERR("Failed to allocate memory for queues\n");
+            goto err;
+        }
+        device->queue_count[fam_index] = queue_count;
+    }
+
 
     *pDevice = device;
     return VK_SUCCESS;
@@ -610,6 +696,13 @@ PFN_vkVoidFunction WINAPI wine_vkGetDeviceProcAddr(VkDevice device, const char *
 
     TRACE("Function %s not found\n", name);
     return NULL;
+}
+
+void WINAPI wine_vkGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue)
+{
+    TRACE("%p %d %d %p\n", device, queueFamilyIndex, queueIndex, pQueue);
+
+    *pQueue = &device->queues[queueFamilyIndex][queueIndex];
 }
 
 static PFN_vkVoidFunction WINAPI wine_vkGetInstanceProcAddr(VkInstance instance, const char *name)
