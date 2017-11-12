@@ -28,6 +28,7 @@
 #include "wine/debug.h"
 #include "wine/heap.h"
 #include "wine/library.h"
+#include "x11drv.h"
 
 /* We only want host compatible structures and don't need alignment. */
 #define WINE_VK_ALIGN(x)
@@ -43,6 +44,9 @@ WINE_DEFAULT_DEBUG_CHANNEL(vulkan);
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 #endif
 
+typedef VkFlags VkXlibSurfaceCreateFlagsKHR;
+#define VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR 1000004000
+
 /* All Vulkan structures use this structure for the first elements. */
 struct wine_vk_structure_header
 {
@@ -50,7 +54,22 @@ struct wine_vk_structure_header
     const void *pNext;
 };
 
+struct wine_vk_surface
+{
+    Window window;
+    VkSurfaceKHR surface; /* native surface */
+};
+
+typedef struct VkXlibSurfaceCreateInfoKHR {
+    VkStructureType                sType;
+    const void*                    pNext;
+    VkXlibSurfaceCreateFlagsKHR    flags;
+    Display*                       dpy;
+    Window                         window;
+} VkXlibSurfaceCreateInfoKHR;
+
 static VkResult (*pvkCreateInstance)(const VkInstanceCreateInfo *, const VkAllocationCallbacks *, VkInstance *);
+static VkResult (*pvkCreateXlibSurfaceKHR)(VkInstance, const VkXlibSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *);
 static void (*pvkDestroyInstance)(VkInstance, const VkAllocationCallbacks *);
 static void * (*pvkGetDeviceProcAddr)(VkDevice, const char *);
 static void * (*pvkGetInstanceProcAddr)(VkInstance, const char *);
@@ -72,6 +91,7 @@ static BOOL wine_vk_init(void)
 
 #define LOAD_FUNCPTR(f) if((p##f = wine_dlsym(vulkan_handle, #f, NULL, 0)) == NULL) return FALSE;
 LOAD_FUNCPTR(vkCreateInstance)
+LOAD_FUNCPTR(vkCreateXlibSurfaceKHR)
 LOAD_FUNCPTR(vkDestroyInstance)
 LOAD_FUNCPTR(vkGetDeviceProcAddr)
 LOAD_FUNCPTR(vkGetInstanceProcAddr)
@@ -195,8 +215,47 @@ static VkResult X11DRV_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCr
 static VkResult X11DRV_vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
         const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface)
 {
-    FIXME("stub: %p %p %p %p\n", instance, pCreateInfo, pAllocator, pSurface);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    VkResult res;
+    VkXlibSurfaceCreateInfoKHR create_info;
+    struct wine_vk_surface *surface;
+    Window win;
+
+    TRACE("%p %p %p %p\n", instance, pCreateInfo, pAllocator, pSurface);
+
+    if (pAllocator)
+        FIXME("Support for allocation callbacks not implemented yet\n");
+
+    /* Don't deal with child window rendering just yet. */
+    if (GetAncestor(pCreateInfo->hwnd, GA_PARENT) != GetDesktopWindow())
+    {
+        FIXME("Application requires child window rendering, which is not implemented yet!\n");
+        return VK_ERROR_INCOMPATIBLE_DRIVER;
+    }
+
+    win = create_client_window(pCreateInfo->hwnd, &default_visual);
+    if (!win) return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+    surface = heap_alloc(sizeof(*surface));
+    if (!surface) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    surface->window = win;
+
+    create_info.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    create_info.pNext = NULL;
+    create_info.flags = 0; /* reserved */
+    create_info.dpy = gdi_display;
+    create_info.window = surface->window;
+
+    res = pvkCreateXlibSurfaceKHR(instance, &create_info, NULL /* pAllocator */, &surface->surface);
+    if (res != VK_SUCCESS)
+    {
+        heap_free(surface);
+        return res;
+    }
+
+    *pSurface = (uintptr_t)surface;
+
+    TRACE("Created surface=0x%s\n", wine_dbgstr_longlong(*pSurface));
+    return VK_SUCCESS;
 }
 
 static void X11DRV_vkDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator)
