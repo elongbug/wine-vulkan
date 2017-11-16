@@ -392,6 +392,36 @@ VkResult WINAPI wine_vkAllocateCommandBuffers(VkDevice device, const VkCommandBu
     return VK_SUCCESS;
 }
 
+void WINAPI wine_vkCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+        const VkCommandBuffer *pCommandBuffers)
+{
+    VkCommandBuffer *buffers;
+    int i;
+
+    TRACE("%p %u %p\n", commandBuffer, commandBufferCount, pCommandBuffers);
+
+    if (!pCommandBuffers || !commandBufferCount)
+        return;
+
+    /* Unfortunately we need a temporary buffer as our command buffers are wrapped.
+     * This call is called often. Maybe we should use alloca? We don't need much memory
+     * space and it needs to be cleaned up after the call anyway.
+     */
+    buffers = heap_alloc(commandBufferCount * sizeof(VkCommandBuffer));
+    if (!buffers)
+    {
+        ERR("Failed to allocate memory for temporary command buffers\n");
+        return;
+    }
+
+    for (i = 0; i < commandBufferCount; i++)
+        buffers[i] = pCommandBuffers[i]->command_buffer;
+
+    commandBuffer->device->funcs.p_vkCmdExecuteCommands(commandBuffer->command_buffer, commandBufferCount, buffers);
+
+    heap_free(buffers);
+}
+
 VkResult WINAPI wine_vkCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
         const VkAllocationCallbacks *pAllocator, VkDevice *pDevice)
 {
