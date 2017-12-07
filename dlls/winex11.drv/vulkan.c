@@ -76,6 +76,10 @@ static void (*pvkDestroyInstance)(VkInstance, const VkAllocationCallbacks *);
 static void (*pvkDestroySurfaceKHR)(VkInstance, VkSurfaceKHR, const VkAllocationCallbacks *);
 static void * (*pvkGetDeviceProcAddr)(VkDevice, const char *);
 static void * (*pvkGetInstanceProcAddr)(VkInstance, const char *);
+static VkResult (*pvkGetPhysicalDeviceSurfaceCapabilitiesKHR)(VkPhysicalDevice, VkSurfaceKHR, VkSurfaceCapabilitiesKHR *);
+static VkResult (*pvkGetPhysicalDeviceSurfaceFormatsKHR)(VkPhysicalDevice, VkSurfaceKHR, uint32_t *, VkSurfaceFormatKHR *);
+static VkResult (*pvkGetPhysicalDeviceSurfacePresentModesKHR)(VkPhysicalDevice, VkSurfaceKHR, uint32_t *, VkPresentModeKHR *);
+static VkResult (*pvkGetPhysicalDeviceSurfaceSupportKHR)(VkPhysicalDevice, uint32_t, VkSurfaceKHR, VkBool32 *);
 static VkBool32 (*pvkGetPhysicalDeviceXlibPresentationSupportKHR)(VkPhysicalDevice, uint32_t, Display *, VisualID);
 
 struct VkExtensionProperties winex11_vk_instance_extensions[] = {
@@ -100,6 +104,10 @@ LOAD_FUNCPTR(vkDestroyInstance)
 LOAD_FUNCPTR(vkDestroySurfaceKHR)
 LOAD_FUNCPTR(vkGetDeviceProcAddr)
 LOAD_FUNCPTR(vkGetInstanceProcAddr)
+LOAD_FUNCPTR(vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
+LOAD_FUNCPTR(vkGetPhysicalDeviceSurfaceFormatsKHR)
+LOAD_FUNCPTR(vkGetPhysicalDeviceSurfacePresentModesKHR)
+LOAD_FUNCPTR(vkGetPhysicalDeviceSurfaceSupportKHR)
 LOAD_FUNCPTR(vkGetPhysicalDeviceXlibPresentationSupportKHR)
 #undef LOAD_FUNCPTR
 
@@ -355,29 +363,43 @@ static void * X11DRV_vkGetInstanceProcAddr(VkInstance instance, const char *name
 static VkResult X11DRV_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         VkSurfaceCapabilitiesKHR *pSurfaceCapabilities)
 {
-    FIXME("stub: %p, 0x%s, %p\n", physicalDevice, wine_dbgstr_longlong(surface), pSurfaceCapabilities);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    struct wine_vk_surface *vk_surface = SURFACE_FROM_HANDLE(surface);
+
+    TRACE("%p, 0x%s, %p\n", physicalDevice, wine_dbgstr_longlong(surface), pSurfaceCapabilities);
+
+    return pvkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, vk_surface->surface, pSurfaceCapabilities);
 }
 
 static VkResult X11DRV_vkGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         uint32_t *pSurfaceFormatCount, VkSurfaceFormatKHR *pSurfaceFormats)
 {
-    FIXME("stub: %p, 0x%s, %p, %p\n", physicalDevice, wine_dbgstr_longlong(surface), pSurfaceFormatCount, pSurfaceFormats);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    struct wine_vk_surface *vk_surface = SURFACE_FROM_HANDLE(surface);
+
+    TRACE("%p, 0x%s, %p, %p\n", physicalDevice, wine_dbgstr_longlong(surface), pSurfaceFormatCount, pSurfaceFormats);
+
+    return pvkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, vk_surface->surface, pSurfaceFormatCount,
+            pSurfaceFormats);
 }
 
 static VkResult X11DRV_vkGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
         uint32_t *pPresentModeCount, VkPresentModeKHR *pPresentModes)
 {
-    FIXME("stub: %p, 0x%s, %p, %p\n", physicalDevice, wine_dbgstr_longlong(surface), pPresentModeCount, pPresentModes);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    struct wine_vk_surface *vk_surface = SURFACE_FROM_HANDLE(surface);
+
+    TRACE("%p, 0x%s, %p, %p\n", physicalDevice, wine_dbgstr_longlong(surface), pPresentModeCount, pPresentModes);
+
+    return pvkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, vk_surface->surface, pPresentModeCount,
+            pPresentModes);
 }
 
 static VkResult X11DRV_vkGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
         VkSurfaceKHR surface, VkBool32 *pSupported)
 {
-    FIXME("stub: %p, %u, 0x%s, %p\n", physicalDevice, queueFamilyIndex, wine_dbgstr_longlong(surface), pSupported);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    struct wine_vk_surface *vk_surface = SURFACE_FROM_HANDLE(surface);
+
+    TRACE("%p, %u, 0x%s, %p\n", physicalDevice, queueFamilyIndex, wine_dbgstr_longlong(surface), pSupported);
+
+    return pvkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, vk_surface->surface, pSupported);
 }
 
 static VkBool32 X11DRV_vkGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysicalDevice physicalDevice,
