@@ -861,8 +861,8 @@ VkResult WINAPI wine_vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swa
 
 VkResult WINAPI wine_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo)
 {
-    FIXME("stub: %p, %p\n", queue, pPresentInfo);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    TRACE("%p, %p\n", queue, pPresentInfo);
+    return vk_funcs->p_vkQueuePresentKHR(queue->queue, pPresentInfo);
 }
 
 void * WINAPI wine_vk_icdGetInstanceProcAddr(VkInstance instance, const char *name)
