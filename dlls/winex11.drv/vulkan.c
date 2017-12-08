@@ -70,10 +70,13 @@ typedef struct VkXlibSurfaceCreateInfoKHR {
     Window                         window;
 } VkXlibSurfaceCreateInfoKHR;
 
+static VkResult (*pvkAcquireNextImageKHR)(VkDevice, VkSwapchainKHR, uint64_t, VkSemaphore, VkFence, uint32_t *);
 static VkResult (*pvkCreateInstance)(const VkInstanceCreateInfo *, const VkAllocationCallbacks *, VkInstance *);
+static VkResult (*pvkCreateSwapchainKHR)(VkDevice, const VkSwapchainCreateInfoKHR *, const VkAllocationCallbacks *, VkSwapchainKHR *);
 static VkResult (*pvkCreateXlibSurfaceKHR)(VkInstance, const VkXlibSurfaceCreateInfoKHR *, const VkAllocationCallbacks *, VkSurfaceKHR *);
 static void (*pvkDestroyInstance)(VkInstance, const VkAllocationCallbacks *);
 static void (*pvkDestroySurfaceKHR)(VkInstance, VkSurfaceKHR, const VkAllocationCallbacks *);
+static void (*pvkDestroySwapchainKHR)(VkDevice, VkSwapchainKHR, const VkAllocationCallbacks *);
 static void * (*pvkGetDeviceProcAddr)(VkDevice, const char *);
 static void * (*pvkGetInstanceProcAddr)(VkInstance, const char *);
 static VkResult (*pvkGetPhysicalDeviceSurfaceCapabilitiesKHR)(VkPhysicalDevice, VkSurfaceKHR, VkSurfaceCapabilitiesKHR *);
@@ -81,6 +84,8 @@ static VkResult (*pvkGetPhysicalDeviceSurfaceFormatsKHR)(VkPhysicalDevice, VkSur
 static VkResult (*pvkGetPhysicalDeviceSurfacePresentModesKHR)(VkPhysicalDevice, VkSurfaceKHR, uint32_t *, VkPresentModeKHR *);
 static VkResult (*pvkGetPhysicalDeviceSurfaceSupportKHR)(VkPhysicalDevice, uint32_t, VkSurfaceKHR, VkBool32 *);
 static VkBool32 (*pvkGetPhysicalDeviceXlibPresentationSupportKHR)(VkPhysicalDevice, uint32_t, Display *, VisualID);
+static VkResult (*pvkGetSwapchainImagesKHR)(VkDevice, VkSwapchainKHR, uint32_t *, VkImage *);
+static VkResult (*pvkQueuePresentKHR)(VkQueue, const VkPresentInfoKHR *);
 
 struct VkExtensionProperties winex11_vk_instance_extensions[] = {
     { "VK_KHR_surface", 1 },
@@ -98,10 +103,13 @@ static BOOL wine_vk_init(void)
     if (!(vulkan_handle = wine_dlopen(SONAME_LIBVULKAN, RTLD_NOW, NULL, 0))) return FALSE;
 
 #define LOAD_FUNCPTR(f) if((p##f = wine_dlsym(vulkan_handle, #f, NULL, 0)) == NULL) return FALSE;
+LOAD_FUNCPTR(vkAcquireNextImageKHR)
 LOAD_FUNCPTR(vkCreateInstance)
+LOAD_FUNCPTR(vkCreateSwapchainKHR)
 LOAD_FUNCPTR(vkCreateXlibSurfaceKHR)
 LOAD_FUNCPTR(vkDestroyInstance)
 LOAD_FUNCPTR(vkDestroySurfaceKHR)
+LOAD_FUNCPTR(vkDestroySwapchainKHR)
 LOAD_FUNCPTR(vkGetDeviceProcAddr)
 LOAD_FUNCPTR(vkGetInstanceProcAddr)
 LOAD_FUNCPTR(vkGetPhysicalDeviceSurfaceCapabilitiesKHR)
@@ -109,6 +117,8 @@ LOAD_FUNCPTR(vkGetPhysicalDeviceSurfaceFormatsKHR)
 LOAD_FUNCPTR(vkGetPhysicalDeviceSurfacePresentModesKHR)
 LOAD_FUNCPTR(vkGetPhysicalDeviceSurfaceSupportKHR)
 LOAD_FUNCPTR(vkGetPhysicalDeviceXlibPresentationSupportKHR)
+LOAD_FUNCPTR(vkGetSwapchainImagesKHR)
+LOAD_FUNCPTR(vkQueuePresentKHR)
 #undef LOAD_FUNCPTR
 
     return TRUE;
@@ -185,10 +195,10 @@ static VkResult wine_vk_instance_convert_create_info(const VkInstanceCreateInfo 
 static VkResult X11DRV_vkAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
         VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex)
 {
-    FIXME("stub: %p, 0x%s, 0x%s, 0x%s, 0x%s, %p\n", device, wine_dbgstr_longlong(swapchain), wine_dbgstr_longlong(timeout),
+    TRACE("%p, 0x%s, 0x%s, 0x%s, 0x%s, %p\n", device, wine_dbgstr_longlong(swapchain), wine_dbgstr_longlong(timeout),
             wine_dbgstr_longlong(semaphore), wine_dbgstr_longlong(fence), pImageIndex);
 
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    return pvkAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
 }
 
 static VkResult X11DRV_vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
@@ -222,8 +232,16 @@ static VkResult X11DRV_vkCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
 static VkResult X11DRV_vkCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
         const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain)
 {
-    FIXME("stub: %p %p %p %p\n", device, pCreateInfo, pAllocator, pSwapchain);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    VkSwapchainCreateInfoKHR create_info;
+    TRACE("%p %p %p %p\n", device, pCreateInfo, pAllocator, pSwapchain);
+
+    if (pAllocator)
+        FIXME("Support for allocation callbacks not implemented yet\n");
+
+    create_info = *pCreateInfo;
+    create_info.surface = SURFACE_FROM_HANDLE(pCreateInfo->surface)->surface;
+
+    return pvkCreateSwapchainKHR(device, &create_info, NULL /* pAllocator */, pSwapchain);
 }
 
 static VkResult X11DRV_vkCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
@@ -297,7 +315,12 @@ static void X11DRV_vkDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface
 
 static void X11DRV_vkDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator)
 {
-    FIXME("stub: %p, 0x%s %p\n", device, wine_dbgstr_longlong(swapchain), pAllocator);
+    TRACE("%p, 0x%s %p\n", device, wine_dbgstr_longlong(swapchain), pAllocator);
+
+    if (pAllocator)
+        FIXME("Support for allocation callbacks not implemented yet\n");
+
+    pvkDestroySwapchainKHR(device, swapchain, pAllocator);
 }
 
 static VkResult X11DRV_vkEnumerateInstanceExtensionProperties(const char *layer_name, uint32_t *count,
@@ -414,14 +437,15 @@ static VkBool32 X11DRV_vkGetPhysicalDeviceWin32PresentationSupportKHR(VkPhysical
 static VkResult X11DRV_vkGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
         VkImage *pSwapchainImages)
 {
-    FIXME("stub: %p, 0x%s %p %p\n", device, wine_dbgstr_longlong(swapchain), pSwapchainImageCount, pSwapchainImages);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    TRACE("%p, 0x%s %p %p\n", device, wine_dbgstr_longlong(swapchain), pSwapchainImageCount, pSwapchainImages);
+
+    return pvkGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
 }
 
 static VkResult X11DRV_vkQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo)
 {
-    FIXME("stub: %p, %p\n", queue, pPresentInfo);
-    return VK_ERROR_OUT_OF_HOST_MEMORY;
+    TRACE("%p, %p\n", queue, pPresentInfo);
+    return pvkQueuePresentKHR(queue, pPresentInfo);
 }
 
 
