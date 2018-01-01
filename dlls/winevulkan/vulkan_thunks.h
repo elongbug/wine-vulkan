@@ -124,135 +124,6 @@ typedef struct VkImageFormatProperties_host
     VkDeviceSize maxResourceSize;
 } VkImageFormatProperties_host;
 
-typedef struct VkImageViewCreateInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkImageViewCreateFlags flags;
-    VkImage image;
-    VkImageViewType viewType;
-    VkFormat format;
-    VkComponentMapping components;
-    VkImageSubresourceRange subresourceRange;
-} VkImageViewCreateInfo_host;
-
-typedef struct VkMemoryAllocateInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkDeviceSize allocationSize;
-    uint32_t memoryTypeIndex;
-} VkMemoryAllocateInfo_host;
-
-typedef struct VkMemoryRequirements_host
-{
-    VkDeviceSize size;
-    VkDeviceSize alignment;
-    uint32_t memoryTypeBits;
-} VkMemoryRequirements_host;
-
-typedef struct VkPipelineShaderStageCreateInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkPipelineShaderStageCreateFlags flags;
-    VkShaderStageFlagBits stage;
-    VkShaderModule module;
-    const char *pName;
-    const VkSpecializationInfo *pSpecializationInfo;
-} VkPipelineShaderStageCreateInfo_host;
-
-typedef struct VkSparseImageMemoryBind_host
-{
-    VkImageSubresource subresource;
-    VkOffset3D offset;
-    VkExtent3D extent;
-    VkDeviceMemory memory;
-    VkDeviceSize memoryOffset;
-    VkSparseMemoryBindFlags flags;
-} VkSparseImageMemoryBind_host;
-
-typedef struct VkSparseImageMemoryRequirements_host
-{
-    VkSparseImageFormatProperties formatProperties;
-    uint32_t imageMipTailFirstLod;
-    VkDeviceSize imageMipTailSize;
-    VkDeviceSize imageMipTailOffset;
-    VkDeviceSize imageMipTailStride;
-} VkSparseImageMemoryRequirements_host;
-
-typedef struct VkSparseMemoryBind_host
-{
-    VkDeviceSize resourceOffset;
-    VkDeviceSize size;
-    VkDeviceMemory memory;
-    VkDeviceSize memoryOffset;
-    VkSparseMemoryBindFlags flags;
-} VkSparseMemoryBind_host;
-
-typedef struct VkSwapchainCreateInfoKHR_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkSwapchainCreateFlagsKHR flags;
-    VkSurfaceKHR surface;
-    uint32_t minImageCount;
-    VkFormat imageFormat;
-    VkColorSpaceKHR imageColorSpace;
-    VkExtent2D imageExtent;
-    uint32_t imageArrayLayers;
-    VkImageUsageFlags imageUsage;
-    VkSharingMode imageSharingMode;
-    uint32_t queueFamilyIndexCount;
-    const uint32_t *pQueueFamilyIndices;
-    VkSurfaceTransformFlagBitsKHR preTransform;
-    VkCompositeAlphaFlagBitsKHR compositeAlpha;
-    VkPresentModeKHR presentMode;
-    VkBool32 clipped;
-    VkSwapchainKHR oldSwapchain;
-} VkSwapchainCreateInfoKHR_host;
-
-typedef struct VkBufferCreateInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkBufferCreateFlags flags;
-    VkDeviceSize size;
-    VkBufferUsageFlags usage;
-    VkSharingMode sharingMode;
-    uint32_t queueFamilyIndexCount;
-    const uint32_t *pQueueFamilyIndices;
-} VkBufferCreateInfo_host;
-
-typedef struct VkCommandBufferAllocateInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkCommandPool commandPool;
-    VkCommandBufferLevel level;
-    uint32_t commandBufferCount;
-} VkCommandBufferAllocateInfo_host;
-
-typedef struct VkComputePipelineCreateInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkPipelineCreateFlags flags;
-    VkPipelineShaderStageCreateInfo_host stage;
-    VkPipelineLayout layout;
-    VkPipeline basePipelineHandle;
-    int32_t basePipelineIndex;
-} VkComputePipelineCreateInfo_host;
-
-typedef struct VkDescriptorSetAllocateInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkDescriptorPool descriptorPool;
-    uint32_t descriptorSetCount;
-    const VkDescriptorSetLayout *pSetLayouts;
-} VkDescriptorSetAllocateInfo_host;
-
 typedef struct VkImageMemoryBarrier_host
 {
     VkStructureType sType;
@@ -267,67 +138,6 @@ typedef struct VkImageMemoryBarrier_host
     VkImageSubresourceRange subresourceRange;
 } VkImageMemoryBarrier_host;
 
-typedef struct VkMemoryHeap_host
-{
-    VkDeviceSize size;
-    VkMemoryHeapFlags flags;
-} VkMemoryHeap_host;
-
-typedef struct VkPhysicalDeviceMemoryProperties_host
-{
-    uint32_t memoryTypeCount;
-    VkMemoryType memoryTypes[VK_MAX_MEMORY_TYPES];
-    uint32_t memoryHeapCount;
-    VkMemoryHeap_host memoryHeaps[VK_MAX_MEMORY_HEAPS];
-} VkPhysicalDeviceMemoryProperties_host;
-
-typedef struct VkRenderPassBeginInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkRenderPass renderPass;
-    VkFramebuffer framebuffer;
-    VkRect2D renderArea;
-    uint32_t clearValueCount;
-    const VkClearValue *pClearValues;
-} VkRenderPassBeginInfo_host;
-
-typedef struct VkSparseImageMemoryBindInfo_host
-{
-    VkImage image;
-    uint32_t bindCount;
-    const VkSparseImageMemoryBind_host *pBinds;
-} VkSparseImageMemoryBindInfo_host;
-
-typedef struct VkSubresourceLayout_host
-{
-    VkDeviceSize offset;
-    VkDeviceSize size;
-    VkDeviceSize rowPitch;
-    VkDeviceSize arrayPitch;
-    VkDeviceSize depthPitch;
-} VkSubresourceLayout_host;
-
-typedef struct VkBufferMemoryBarrier_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkAccessFlags srcAccessMask;
-    VkAccessFlags dstAccessMask;
-    uint32_t srcQueueFamilyIndex;
-    uint32_t dstQueueFamilyIndex;
-    VkBuffer buffer;
-    VkDeviceSize offset;
-    VkDeviceSize size;
-} VkBufferMemoryBarrier_host;
-
-typedef struct VkDescriptorBufferInfo_host
-{
-    VkBuffer buffer;
-    VkDeviceSize offset;
-    VkDeviceSize range;
-} VkDescriptorBufferInfo_host;
-
 typedef struct VkMappedMemoryRange_host
 {
     VkStructureType sType;
@@ -337,34 +147,11 @@ typedef struct VkMappedMemoryRange_host
     VkDeviceSize size;
 } VkMappedMemoryRange_host;
 
-typedef struct VkSparseBufferMemoryBindInfo_host
+typedef struct VkMemoryHeap_host
 {
-    VkBuffer buffer;
-    uint32_t bindCount;
-    const VkSparseMemoryBind_host *pBinds;
-} VkSparseBufferMemoryBindInfo_host;
-
-typedef struct VkWriteDescriptorSet_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkDescriptorSet dstSet;
-    uint32_t dstBinding;
-    uint32_t dstArrayElement;
-    uint32_t descriptorCount;
-    VkDescriptorType descriptorType;
-    const VkDescriptorImageInfo_host *pImageInfo;
-    const VkDescriptorBufferInfo_host *pBufferInfo;
-    const VkBufferView *pTexelBufferView;
-} VkWriteDescriptorSet_host;
-
-typedef struct VkCommandBufferBeginInfo_host
-{
-    VkStructureType sType;
-    const void *pNext;
-    VkCommandBufferUsageFlags flags;
-    const VkCommandBufferInheritanceInfo_host *pInheritanceInfo;
-} VkCommandBufferBeginInfo_host;
+    VkDeviceSize size;
+    VkMemoryHeapFlags flags;
+} VkMemoryHeap_host;
 
 typedef struct VkPhysicalDeviceLimits_host
 {
@@ -476,12 +263,224 @@ typedef struct VkPhysicalDeviceLimits_host
     VkDeviceSize nonCoherentAtomSize;
 } VkPhysicalDeviceLimits_host;
 
+typedef struct VkPhysicalDeviceProperties_host
+{
+    uint32_t apiVersion;
+    uint32_t driverVersion;
+    uint32_t vendorID;
+    uint32_t deviceID;
+    VkPhysicalDeviceType deviceType;
+    char deviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
+    uint8_t pipelineCacheUUID[VK_UUID_SIZE];
+    VkPhysicalDeviceLimits_host limits;
+    VkPhysicalDeviceSparseProperties sparseProperties;
+} VkPhysicalDeviceProperties_host;
+
+typedef struct VkPipelineShaderStageCreateInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkPipelineShaderStageCreateFlags flags;
+    VkShaderStageFlagBits stage;
+    VkShaderModule module;
+    const char *pName;
+    const VkSpecializationInfo *pSpecializationInfo;
+} VkPipelineShaderStageCreateInfo_host;
+
+typedef struct VkSparseImageMemoryBind_host
+{
+    VkImageSubresource subresource;
+    VkOffset3D offset;
+    VkExtent3D extent;
+    VkDeviceMemory memory;
+    VkDeviceSize memoryOffset;
+    VkSparseMemoryBindFlags flags;
+} VkSparseImageMemoryBind_host;
+
+typedef struct VkSparseImageMemoryRequirements_host
+{
+    VkSparseImageFormatProperties formatProperties;
+    uint32_t imageMipTailFirstLod;
+    VkDeviceSize imageMipTailSize;
+    VkDeviceSize imageMipTailOffset;
+    VkDeviceSize imageMipTailStride;
+} VkSparseImageMemoryRequirements_host;
+
+typedef struct VkSparseMemoryBind_host
+{
+    VkDeviceSize resourceOffset;
+    VkDeviceSize size;
+    VkDeviceMemory memory;
+    VkDeviceSize memoryOffset;
+    VkSparseMemoryBindFlags flags;
+} VkSparseMemoryBind_host;
+
+typedef struct VkSwapchainCreateInfoKHR_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkSwapchainCreateFlagsKHR flags;
+    VkSurfaceKHR surface;
+    uint32_t minImageCount;
+    VkFormat imageFormat;
+    VkColorSpaceKHR imageColorSpace;
+    VkExtent2D imageExtent;
+    uint32_t imageArrayLayers;
+    VkImageUsageFlags imageUsage;
+    VkSharingMode imageSharingMode;
+    uint32_t queueFamilyIndexCount;
+    const uint32_t *pQueueFamilyIndices;
+    VkSurfaceTransformFlagBitsKHR preTransform;
+    VkCompositeAlphaFlagBitsKHR compositeAlpha;
+    VkPresentModeKHR presentMode;
+    VkBool32 clipped;
+    VkSwapchainKHR oldSwapchain;
+} VkSwapchainCreateInfoKHR_host;
+
+typedef struct VkBufferCreateInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkBufferCreateFlags flags;
+    VkDeviceSize size;
+    VkBufferUsageFlags usage;
+    VkSharingMode sharingMode;
+    uint32_t queueFamilyIndexCount;
+    const uint32_t *pQueueFamilyIndices;
+} VkBufferCreateInfo_host;
+
+typedef struct VkCommandBufferAllocateInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkCommandPool commandPool;
+    VkCommandBufferLevel level;
+    uint32_t commandBufferCount;
+} VkCommandBufferAllocateInfo_host;
+
+typedef struct VkComputePipelineCreateInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkPipelineCreateFlags flags;
+    VkPipelineShaderStageCreateInfo_host stage;
+    VkPipelineLayout layout;
+    VkPipeline basePipelineHandle;
+    int32_t basePipelineIndex;
+} VkComputePipelineCreateInfo_host;
+
+typedef struct VkDescriptorSetAllocateInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkDescriptorPool descriptorPool;
+    uint32_t descriptorSetCount;
+    const VkDescriptorSetLayout *pSetLayouts;
+} VkDescriptorSetAllocateInfo_host;
+
+typedef struct VkImageFormatProperties2KHR_host
+{
+    VkStructureType sType;
+    void *pNext;
+    VkImageFormatProperties_host imageFormatProperties;
+} VkImageFormatProperties2KHR_host;
+
+typedef struct VkMemoryAllocateInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkDeviceSize allocationSize;
+    uint32_t memoryTypeIndex;
+} VkMemoryAllocateInfo_host;
+
+typedef struct VkPhysicalDeviceMemoryProperties_host
+{
+    uint32_t memoryTypeCount;
+    VkMemoryType memoryTypes[VK_MAX_MEMORY_TYPES];
+    uint32_t memoryHeapCount;
+    VkMemoryHeap_host memoryHeaps[VK_MAX_MEMORY_HEAPS];
+} VkPhysicalDeviceMemoryProperties_host;
+
+typedef struct VkPhysicalDeviceProperties2KHR_host
+{
+    VkStructureType sType;
+    void *pNext;
+    VkPhysicalDeviceProperties_host properties;
+} VkPhysicalDeviceProperties2KHR_host;
+
+typedef struct VkSparseBufferMemoryBindInfo_host
+{
+    VkBuffer buffer;
+    uint32_t bindCount;
+    const VkSparseMemoryBind_host *pBinds;
+} VkSparseBufferMemoryBindInfo_host;
+
 typedef struct VkSparseImageOpaqueMemoryBindInfo_host
 {
     VkImage image;
     uint32_t bindCount;
     const VkSparseMemoryBind_host *pBinds;
 } VkSparseImageOpaqueMemoryBindInfo_host;
+
+typedef struct VkBufferMemoryBarrier_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkAccessFlags srcAccessMask;
+    VkAccessFlags dstAccessMask;
+    uint32_t srcQueueFamilyIndex;
+    uint32_t dstQueueFamilyIndex;
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    VkDeviceSize size;
+} VkBufferMemoryBarrier_host;
+
+typedef struct VkDescriptorBufferInfo_host
+{
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    VkDeviceSize range;
+} VkDescriptorBufferInfo_host;
+
+typedef struct VkImageViewCreateInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkImageViewCreateFlags flags;
+    VkImage image;
+    VkImageViewType viewType;
+    VkFormat format;
+    VkComponentMapping components;
+    VkImageSubresourceRange subresourceRange;
+} VkImageViewCreateInfo_host;
+
+typedef struct VkPhysicalDeviceMemoryProperties2KHR_host
+{
+    VkStructureType sType;
+    void *pNext;
+    VkPhysicalDeviceMemoryProperties_host memoryProperties;
+} VkPhysicalDeviceMemoryProperties2KHR_host;
+
+typedef struct VkSparseImageMemoryBindInfo_host
+{
+    VkImage image;
+    uint32_t bindCount;
+    const VkSparseImageMemoryBind_host *pBinds;
+} VkSparseImageMemoryBindInfo_host;
+
+typedef struct VkWriteDescriptorSet_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkDescriptorSet dstSet;
+    uint32_t dstBinding;
+    uint32_t dstArrayElement;
+    uint32_t descriptorCount;
+    VkDescriptorType descriptorType;
+    const VkDescriptorImageInfo_host *pImageInfo;
+    const VkDescriptorBufferInfo_host *pBufferInfo;
+    const VkBufferView *pTexelBufferView;
+} VkWriteDescriptorSet_host;
 
 typedef struct VkBindSparseInfo_host
 {
@@ -498,19 +497,6 @@ typedef struct VkBindSparseInfo_host
     uint32_t signalSemaphoreCount;
     const VkSemaphore *pSignalSemaphores;
 } VkBindSparseInfo_host;
-
-typedef struct VkPhysicalDeviceProperties_host
-{
-    uint32_t apiVersion;
-    uint32_t driverVersion;
-    uint32_t vendorID;
-    uint32_t deviceID;
-    VkPhysicalDeviceType deviceType;
-    char deviceName[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
-    uint8_t pipelineCacheUUID[VK_UUID_SIZE];
-    VkPhysicalDeviceLimits_host limits;
-    VkPhysicalDeviceSparseProperties sparseProperties;
-} VkPhysicalDeviceProperties_host;
 
 typedef struct VkGraphicsPipelineCreateInfo_host
 {
@@ -534,6 +520,41 @@ typedef struct VkGraphicsPipelineCreateInfo_host
     VkPipeline basePipelineHandle;
     int32_t basePipelineIndex;
 } VkGraphicsPipelineCreateInfo_host;
+
+typedef struct VkRenderPassBeginInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkRenderPass renderPass;
+    VkFramebuffer framebuffer;
+    VkRect2D renderArea;
+    uint32_t clearValueCount;
+    const VkClearValue *pClearValues;
+} VkRenderPassBeginInfo_host;
+
+typedef struct VkCommandBufferBeginInfo_host
+{
+    VkStructureType sType;
+    const void *pNext;
+    VkCommandBufferUsageFlags flags;
+    const VkCommandBufferInheritanceInfo_host *pInheritanceInfo;
+} VkCommandBufferBeginInfo_host;
+
+typedef struct VkSubresourceLayout_host
+{
+    VkDeviceSize offset;
+    VkDeviceSize size;
+    VkDeviceSize rowPitch;
+    VkDeviceSize arrayPitch;
+    VkDeviceSize depthPitch;
+} VkSubresourceLayout_host;
+
+typedef struct VkMemoryRequirements_host
+{
+    VkDeviceSize size;
+    VkDeviceSize alignment;
+    uint32_t memoryTypeBits;
+} VkMemoryRequirements_host;
 
 
 /* For use by vkDevice and children */
@@ -761,11 +782,18 @@ struct vulkan_instance_funcs
     VkResult (*p_vkEnumerateDeviceLayerProperties)(VkPhysicalDevice, uint32_t *, VkLayerProperties *);
     VkResult (*p_vkEnumeratePhysicalDevices)(VkInstance, uint32_t *, VkPhysicalDevice *);
     void (*p_vkGetPhysicalDeviceFeatures)(VkPhysicalDevice, VkPhysicalDeviceFeatures *);
+    void (*p_vkGetPhysicalDeviceFeatures2KHR)(VkPhysicalDevice, VkPhysicalDeviceFeatures2KHR *);
     void (*p_vkGetPhysicalDeviceFormatProperties)(VkPhysicalDevice, VkFormat, VkFormatProperties *);
+    void (*p_vkGetPhysicalDeviceFormatProperties2KHR)(VkPhysicalDevice, VkFormat, VkFormatProperties2KHR *);
 #if defined(USE_STRUCT_CONVERSION)
     VkResult (*p_vkGetPhysicalDeviceImageFormatProperties)(VkPhysicalDevice, VkFormat, VkImageType, VkImageTiling, VkImageUsageFlags, VkImageCreateFlags, VkImageFormatProperties_host *);
 #else
     VkResult (*p_vkGetPhysicalDeviceImageFormatProperties)(VkPhysicalDevice, VkFormat, VkImageType, VkImageTiling, VkImageUsageFlags, VkImageCreateFlags, VkImageFormatProperties *);
+#endif
+#if defined(USE_STRUCT_CONVERSION)
+    VkResult (*p_vkGetPhysicalDeviceImageFormatProperties2KHR)(VkPhysicalDevice, const VkPhysicalDeviceImageFormatInfo2KHR *, VkImageFormatProperties2KHR_host *);
+#else
+    VkResult (*p_vkGetPhysicalDeviceImageFormatProperties2KHR)(VkPhysicalDevice, const VkPhysicalDeviceImageFormatInfo2KHR *, VkImageFormatProperties2KHR *);
 #endif
 #if defined(USE_STRUCT_CONVERSION)
     void (*p_vkGetPhysicalDeviceMemoryProperties)(VkPhysicalDevice, VkPhysicalDeviceMemoryProperties_host *);
@@ -773,12 +801,24 @@ struct vulkan_instance_funcs
     void (*p_vkGetPhysicalDeviceMemoryProperties)(VkPhysicalDevice, VkPhysicalDeviceMemoryProperties *);
 #endif
 #if defined(USE_STRUCT_CONVERSION)
+    void (*p_vkGetPhysicalDeviceMemoryProperties2KHR)(VkPhysicalDevice, VkPhysicalDeviceMemoryProperties2KHR_host *);
+#else
+    void (*p_vkGetPhysicalDeviceMemoryProperties2KHR)(VkPhysicalDevice, VkPhysicalDeviceMemoryProperties2KHR *);
+#endif
+#if defined(USE_STRUCT_CONVERSION)
     void (*p_vkGetPhysicalDeviceProperties)(VkPhysicalDevice, VkPhysicalDeviceProperties_host *);
 #else
     void (*p_vkGetPhysicalDeviceProperties)(VkPhysicalDevice, VkPhysicalDeviceProperties *);
 #endif
+#if defined(USE_STRUCT_CONVERSION)
+    void (*p_vkGetPhysicalDeviceProperties2KHR)(VkPhysicalDevice, VkPhysicalDeviceProperties2KHR_host *);
+#else
+    void (*p_vkGetPhysicalDeviceProperties2KHR)(VkPhysicalDevice, VkPhysicalDeviceProperties2KHR *);
+#endif
     void (*p_vkGetPhysicalDeviceQueueFamilyProperties)(VkPhysicalDevice, uint32_t *, VkQueueFamilyProperties *);
+    void (*p_vkGetPhysicalDeviceQueueFamilyProperties2KHR)(VkPhysicalDevice, uint32_t *, VkQueueFamilyProperties2KHR *);
     void (*p_vkGetPhysicalDeviceSparseImageFormatProperties)(VkPhysicalDevice, VkFormat, VkImageType, VkSampleCountFlagBits, VkImageUsageFlags, VkImageTiling, uint32_t *, VkSparseImageFormatProperties *);
+    void (*p_vkGetPhysicalDeviceSparseImageFormatProperties2KHR)(VkPhysicalDevice, const VkPhysicalDeviceSparseImageFormatInfo2KHR *, uint32_t *, VkSparseImageFormatProperties2KHR *);
 };
 
 #define ALL_VK_DEVICE_FUNCS() \
@@ -909,11 +949,18 @@ struct vulkan_instance_funcs
     USE_VK_FUNC(vkEnumerateDeviceLayerProperties)\
     USE_VK_FUNC(vkEnumeratePhysicalDevices)\
     USE_VK_FUNC(vkGetPhysicalDeviceFeatures)\
+    USE_VK_FUNC(vkGetPhysicalDeviceFeatures2KHR)\
     USE_VK_FUNC(vkGetPhysicalDeviceFormatProperties)\
+    USE_VK_FUNC(vkGetPhysicalDeviceFormatProperties2KHR)\
     USE_VK_FUNC(vkGetPhysicalDeviceImageFormatProperties)\
+    USE_VK_FUNC(vkGetPhysicalDeviceImageFormatProperties2KHR)\
     USE_VK_FUNC(vkGetPhysicalDeviceMemoryProperties)\
+    USE_VK_FUNC(vkGetPhysicalDeviceMemoryProperties2KHR)\
     USE_VK_FUNC(vkGetPhysicalDeviceProperties)\
+    USE_VK_FUNC(vkGetPhysicalDeviceProperties2KHR)\
     USE_VK_FUNC(vkGetPhysicalDeviceQueueFamilyProperties)\
-    USE_VK_FUNC(vkGetPhysicalDeviceSparseImageFormatProperties)
+    USE_VK_FUNC(vkGetPhysicalDeviceQueueFamilyProperties2KHR)\
+    USE_VK_FUNC(vkGetPhysicalDeviceSparseImageFormatProperties)\
+    USE_VK_FUNC(vkGetPhysicalDeviceSparseImageFormatProperties2KHR)
 
 #endif /* __WINE_VULKAN_THUNKS_H */
