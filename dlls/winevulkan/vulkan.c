@@ -865,6 +865,21 @@ PFN_vkVoidFunction WINAPI wine_vkGetDeviceProcAddr(VkDevice device, const char *
     if (func)
         return func;
 
+    /* vkGetDeviceProcAddr was intended for loading device and subdevice functions. Doom and Wolfenstein
+     * however use it also for loading of instance functions. This is undefined behavior as the specification
+     * clearly disallows using any of the returned function pointers outside of device / subdevice objects.
+     * Khronos recognizes the issue and is addressing the spec. The mentioned games may get updated. If they
+     * do we could remove the hack below.
+     * https://github.com/KhronosGroup/Vulkan-LoaderAndValidationLayers/issues/2323
+     * https://github.com/KhronosGroup/Vulkan-Docs/issues/655
+     */
+    func = wine_vk_get_instance_proc_addr(name);
+    if (func)
+    {
+        WARN("Application relies on undefined behavior by requesting instance function '%s'!\n", name);
+        return func;
+    }
+
     TRACE("Function %s not found\n", name);
     return NULL;
 }
