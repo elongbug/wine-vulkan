@@ -88,24 +88,42 @@ static VkResult (*pvkQueuePresentKHR)(VkQueue, const VkPresentInfoKHR *);
 static struct VkExtensionProperties *winex11_vk_instance_extensions = NULL;
 static int winex11_vk_instance_extensions_count = 0;
 
-static void wine_vk_load_instance_extensions(void)
+static BOOL wine_vk_load_instance_extensions(void)
 {
     uint32_t num_properties;
     VkExtensionProperties *properties;
+    VkResult res;
     int i;
 
-    pvkEnumerateInstanceExtensionProperties(NULL, &num_properties, NULL);
+    res = pvkEnumerateInstanceExtensionProperties(NULL, &num_properties, NULL);
+    if (res != VK_SUCCESS)
+    {
+        ERR("Failed to enumerate instance extensions count res=%d\n", res);
+        return FALSE;
+    }
+
+    TRACE("Found %d instance extensions\n", num_properties);
 
     properties = heap_alloc(num_properties * sizeof(*properties));
     if (!properties)
-        return;
+    {
+        ERR("Failed to allocate memory for instance properties!\n");
+        return FALSE;
+    }
 
     /* We will return the number of instance extensions reported by the host back to
      * winevulkan, but we may replace xlib extensions with their win32 names. It is
      * ultimately up to winevulkan to perform more detailed filtering as it knows whether
      * it has thunks for a particular extension.
      */
-    pvkEnumerateInstanceExtensionProperties(NULL, &num_properties, properties);
+    res = pvkEnumerateInstanceExtensionProperties(NULL, &num_properties, properties);
+    if (res != VK_SUCCESS)
+    {
+        ERR("Failed to enumerate instance extensions res=%d\n", res);
+        return FALSE;
+    }
+    TRACE("Found %d instance extensions (try2)\n", num_properties);
+
     for (i = 0; i < num_properties; i++)
     {
         /* For now the only x11 extension we need to fixup. Long-term we may need an array. */
@@ -122,6 +140,7 @@ static void wine_vk_load_instance_extensions(void)
 
     winex11_vk_instance_extensions = properties;
     winex11_vk_instance_extensions_count = num_properties;
+    return TRUE;
 }
 
 static BOOL wine_vk_init(void)
@@ -154,7 +173,9 @@ LOAD_FUNCPTR(vkGetSwapchainImagesKHR)
 LOAD_FUNCPTR(vkQueuePresentKHR)
 #undef LOAD_FUNCPTR
 
-    wine_vk_load_instance_extensions();
+    /* Fail without instance extensions (e.g. surface). */
+    if (!wine_vk_load_instance_extensions())
+        return FALSE;
 
     return TRUE;
 }
